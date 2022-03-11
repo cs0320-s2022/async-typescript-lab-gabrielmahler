@@ -6,10 +6,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import freemarker.template.Configuration;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -80,6 +85,7 @@ public final class Main {
     // Allows requests from any domain (i.e., any URL). This makes development
     // easier, but it’s not a good idea for deployment.
     Spark.before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
+    Spark.post("/results", new ResultsHandler());
   }
 
   /**
@@ -106,18 +112,32 @@ public final class Main {
    */
   private static class ResultsHandler implements Route {
     @Override
-    public String handle(Request req, Response res) {
+    public String handle(Request req, Response res) throws JSONException {
       // TODO: Get JSONObject from req and use it to get the value of the sun, moon,
       // and rising
       // for generating matches
+      JSONObject jsonReq = new JSONObject(req.body());
+      String sun = jsonReq.getString("sun");
+      String moon = jsonReq.getString("moon");
+      String rising = jsonReq.getString("rising");
 
       // TODO: use the MatchMaker.makeMatches method to get matches
+      List<String> matches = MatchMaker.makeMatches(sun, moon, rising);
+      
 
       // TODO: create an immutable map using the matches
+      // ImmutableMap<Integer, String> matchesMap = ImmutableMap.<Integer, String>builder()
+      // .put(0, matches.get(0))
+      // .put(1, matches.get(1))
+      // .put(2, matches.get(2))
+      // .build();
 
+      ImmutableMap<String, List<String>> resMap = ImmutableMap.of("data", matches);
+        
       // TODO: return a json of the suggestions (HINT: use GSON.toJson())
       Gson GSON = new Gson();
-      return null;
+      String result = GSON.toJson(resMap);
+      return result;
     }
   }
 }
